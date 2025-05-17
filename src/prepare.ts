@@ -9,7 +9,6 @@ const string = /^'[^']*'$|^"[^"]*"$/;
 export function tokenise(sql: string): Token[] {
     let index = 0;
     let previousIndex = 0;
-    let parenthesisLevel = 0;
     const out: Token[] = [];
 
     while (index < sql.length) {
@@ -27,10 +26,26 @@ export function tokenise(sql: string): Token[] {
         }
 
         if (sql[index] === "(") {
-            parenthesisLevel++;
-        } else if (sql[index] === ")") {
-            parenthesisLevel--;
-        } else if (sql[index] === "," && parenthesisLevel === 0) {
+            // Everything inside parentheses is treated as a "black box" as is
+            // tokenised as part of a parent expression
+            let parenthesisLevel = 0;
+
+            while (index < sql.length) {
+                if (sql[index] === "(") {
+                    parenthesisLevel++;
+                } else if (sql[index] === ")") {
+                    parenthesisLevel--;
+                }
+
+                if (parenthesisLevel === 0) {
+                    break;
+                }
+
+                index++;
+            }
+        }
+
+        if (sql[index] === ",") {
             if (index != previousIndex) {
                 tokeniseExpression(sql, previousIndex, index, out);
             }
@@ -41,6 +56,7 @@ export function tokenise(sql: string): Token[] {
         index++;
     }
 
+    // Add the trailing part of the input string
     if (index != previousIndex) {
         tokeniseExpression(sql, previousIndex, index, out);
     }
@@ -50,11 +66,11 @@ export function tokenise(sql: string): Token[] {
 
 function tokeniseExpression(
     sql: string,
-    previousIndex: number,
-    index: number,
+    from: number,
+    to: number,
     out: Token[]
 ) {
-    const value = sql.substring(previousIndex, index).trim();
+    const value = sql.substring(from, to).trim();
 
     const numberMatch = number.exec(value);
     if (numberMatch) {
