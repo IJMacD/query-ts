@@ -11,8 +11,9 @@ const objects = [
 const query = new Query();
 query.addTables({ objects });
 
-const results = query.query(
-    `FROM objects
+console.log([
+    ...query.query(
+        `FROM objects
     WHERE
         birthDate.toISOString() > '1915-01-01' AND
         id > 2
@@ -22,6 +23,17 @@ const results = query.query(
         Math.PI as pi,
         3 AS close_enough,
         "hi" AS greeting`
-);
+    ),
+]);
 
-console.log([...results]);
+console.log([
+    ...query.query(
+        `FROM objects
+    WHERE
+        birthDate.toISOString() > '1915-01-01' AND
+        id > 2
+    SELECT
+        COUNT(*)`
+    ),
+]);
+

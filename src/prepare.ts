@@ -6,6 +6,8 @@ const symbol = /^\w[\w\d_]*$/;
 const number = /^-?\d+(\.\d+)?$/;
 const string = /^'[^']*'$|^"[^"]*"$/;
 
+const functionRegex = /^([a-z]+)\([^)]*\)$/i;
+
 export function tokenise(sql: string): Token[] {
     let index = 0;
     let previousIndex = 0;
@@ -110,6 +112,7 @@ export function parse(tokens: Token[]): ParsedQuery {
         select: {} as { [alias: string]: Token },
         from: "",
         where: [] as Token[],
+        isAggregate: false,
     };
 
     let currentClause = "";
@@ -126,6 +129,18 @@ export function parse(tokens: Token[]): ParsedQuery {
             if (currentClause === "SELECT") {
                 query.select[token.value] = token;
                 previousSelectNode = token.value;
+
+                const match = functionRegex.exec(token.value);
+                if (match) {
+                    if (
+                        ["COUNT", "MIN", "MAX", "SUM", "AVG"].includes(
+                            match[1].toUpperCase()
+                        )
+                    ) {
+                        query.isAggregate = true;
+                    }
+                    token.type = "Function";
+                }
             } else if (currentClause === "AS") {
                 query.select[token.value] = query.select[previousSelectNode];
                 delete query.select[previousSelectNode];

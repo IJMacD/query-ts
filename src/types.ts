@@ -5,7 +5,8 @@ export type TokenType =
     | "Number"
     | "Expression"
     | "Parenthesis"
-    | "Comma";
+    | "Comma"
+    | "Function";
 
 export type Token = {
     type: TokenType;
@@ -16,4 +17,5 @@ export type ParsedQuery = {
     select: { [alias: string]: Token };
     from: string;
     where: Token[];
+    isAggregate: boolean;
 };
